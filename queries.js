@@ -11,16 +11,16 @@ var db = pgp(connectionString);
 function getAllRootObjects(req, res, next) {
   const query = `
   select array_to_json(array_agg(json_build_object(
-    'id', id,
-    'name', name,
-    'is_dir', is_dir,
-    'size', size,
-    'content_type', content_type,
-    'etag', etag,
-    'last_modified', floor(extract(epoch from last_modified) * 1000),
-    'parent', parent))) as data
-  from objects
-  where parent is null
+      'id', id,
+      'name', name,
+      'is_dir', is_dir,
+      'size', size,
+      'content_type', content_type,
+      'etag', etag,
+      'last_modified', floor(extract(epoch from last_modified) * 1000),
+      'parent', parent))) as data
+    from objects
+    where parent is null
   `;
   db.query(query)
     .then(function (data) {
@@ -129,9 +129,10 @@ function createObject(req, res, next) {
   insert into objects (name, is_dir, size, parent)
   values ($1, $2, $3, $4);
   `;
+  console.log(req.body);
   db.none(query, [
     req.body.name,
-    req.body.is_dir || true,
+    req.body.is_dir || false,
     req.body.size || null,
     req.body.parent || null])
     .then(function () {
