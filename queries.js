@@ -126,10 +126,14 @@ function getSingleObject(req, res, next) {
 
 function createObject(req, res, next) {
   query = `
-  insert into objects (name, size, parent)
-  values ($1, 0, null);
+  insert into objects (name, is_dir, size, parent)
+  values ($1, $2, $3, $4);
   `;
-  db.none(query, req.body.name)
+  db.none(query, [
+    req.body.name,
+    req.body.is_dir || true,
+    req.body.size || null,
+    req.body.parent || null])
     .then(function () {
       res.status(200)
         .json({
