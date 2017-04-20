@@ -36,7 +36,7 @@ values
 
 create table user_tokens (
   id bigserial primary key,
-  user_id bigint not null references users,
+  user_id bigint not null references users on delete cascade on update cascade,
   token text not null default replace(gen_random_uuid()::text, '-', '') || ':' || encode(digest(floor(extract(epoch from now()) * 1000)::text, 'sha1'), 'hex'),
   expires timestamp without time zone default now() + interval '3 days'
 );
@@ -46,8 +46,8 @@ select id from users;
 
 create table user_profiles (
   id bigserial primary key,
-  user_id bigint not null references users,
-  plan_id integer not null references plans,
+  user_id bigint not null references users on delete cascade on update cascade,
+  plan_id integer not null references plans on delete cascade on update cascade,
   first_name citext,
   last_name citext,
   attrs jsonb
@@ -58,7 +58,7 @@ select id, 1 from users;
 
 create table user_storages (
   id bigserial primary key,
-  user_id bigint not null references users,
+  user_id bigint not null references users on delete cascade on update cascade,
   main uuid not null default uuid_generate_v4(),
   trash uuid not null default uuid_generate_v4()
 );
@@ -73,7 +73,7 @@ create table storage_objects (
   size bigint not null default 0,
   content_type citext,
   etag citext,
-  parent uuid references storage_objects,
+  parent uuid references storage_objects on delete cascade on update cascade,
   storage uuid not null,
   last_modified timestamp without time zone default now()
 );

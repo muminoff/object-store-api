@@ -12,13 +12,14 @@
     <vk-button @click.native="newFolder">New folder</vk-button>
     <vk-button @click.native="newFile">New file</vk-button>
     <vk-button @click.native="clearTable">Clear table</vk-button>
-    <vk-button @click.native="getPathInfo(currentDir)">Get path info</vk-button>
+    <vk-button @click.native="getPathInfo">Get path info</vk-button>
     <ul>
       <li v-for="item in items">
         <i v-if="item.is_dir" class="uk-icon-folder"></i>
         <i v-else="item.is_dir" class="uk-icon-file"></i>
         <a v-if="item.is_dir" @click="getObject(item.id)"> {{ item.name }}</a>
         <span v-else="item.is_dir"><p>{{ item.name }}</p></span>
+        <vk-button @click.native="removeObject(item.id)">remove</vk-button>
       </li>
     </ul>
   </div>
@@ -67,7 +68,11 @@ export default {
       }
       axios.post(api, data)
         .then(response => {
-          this.getObjects(this.currentDir)
+          if (this.currentDir !== null) {
+            this.getObjects(this.currentDir)
+          } else {
+            getObjects()
+          }
         }).catch(error => {
           this.getObjects()
         })
@@ -90,8 +95,8 @@ export default {
         })
     },
     getObjects(objectId) {
-      var api = 'http://localhost:3000/api/' + this.currentStorage + '/objects/'
-      if (objectId !== undefined) {
+      let api = 'http://localhost:3000/api/' + this.currentStorage + '/objects/'
+      if (objectId !== undefined && objectId !== null) {
         api = api + objectId
       }
       axios.get(api)
@@ -111,10 +116,26 @@ export default {
           this.items = []
         })
     },
-    getPathInfo(objectId) {
+    getPathInfo() {
+      if (this.currentDir !== null) {
+        let api = 'http://localhost:3000/api/' + this.currentStorage + '/object/' + this.currentDir
+        axios.get(api)
+          .then(response => {
+            console.log(response.data.data)
+          }).catch(error => {
+            this.items = []
+          })
+      }
+    },
+    removeObject(objectId) {
       const api = 'http://localhost:3000/api/' + this.currentStorage + '/object/' + objectId
-      axios.get(api)
+      axios.delete(api)
         .then(response => {
+          if (this.currentDir !== null) {
+            this.getObjects(this.currentDir)
+          } else {
+            getObjects()
+          }
         }).catch(error => {
           this.items = []
         })

@@ -226,6 +226,7 @@ function removeObject(req, res, next) {
         });
     })
     .catch(function (err) {
+      console.log(err);
       return next(err);
     });
 }
