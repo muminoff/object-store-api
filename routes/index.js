@@ -5,8 +5,9 @@ var db = require('../queries');
 router.get('/api/storage', db.getStorageInfo);
 router.get('/api/:storage/objects/:id?', db.getAllObjects);
 router.get('/api/:storage/object/:id', db.getSingleObject);
-router.post('/api/:storage/objects', db.createObject);
-router.put('/api/:storage/objects/:id', db.updateObject);
-router.delete('/api/:storage/objects/:id', db.removeObject);
+router.post('/api/:storage/directory', db.createDirectoryObject);
+router.post('/api/:storage/file', db.createFileObject);
+router.put('/api/:storage/object/:id', db.updateObject);
+router.delete('/api/:storage/object/:id', db.removeObject);
 
 module.exports = router;

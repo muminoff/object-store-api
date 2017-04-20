@@ -1,4 +1,5 @@
 var promise = require('bluebird');
+var mime = require('mime-types');
 
 var options = {
   promiseLib: promise
@@ -144,16 +145,14 @@ function getSingleObject(req, res, next) {
     });
 }
 
-function createObject(req, res, next) {
+function createDirectoryObject(req, res, next) {
   console.log(req.body);
   query = `
-  insert into storage_objects (name, is_dir, size, parent, storage)
-  values ($1, $2, $3, $4, $5);
+  insert into storage_objects (name, is_dir, parent, storage)
+  values ($1, true, $2, $3);
   `;
   db.none(query, [
     req.body.name,
-    req.body.is_dir,
-    req.body.size || 0,
     req.body.parent || null,
     req.params.storage
   ])
@@ -161,7 +160,34 @@ function createObject(req, res, next) {
       res.status(200)
         .json({
           status: 'success',
-          message: 'Inserted one object'
+          message: 'Created directory object'
+        });
+    })
+    .catch(function (err) {
+      console.error(err);
+      return next(err);
+    });
+}
+
+function createFileObject(req, res, next) {
+  console.log(req.body);
+  query = `
+  insert into storage_objects (name, is_dir, size, content_type, etag, parent, storage)
+  values ($1, false, $2, $3, $4, $5, $6);
+  `;
+  db.none(query, [
+    req.body.name,
+    req.body.size,
+    req.body.content_type,
+    req.body.etag,
+    req.body.parent || null,
+    req.params.storage
+  ])
+    .then(function () {
+      res.status(200)
+        .json({
+          status: 'success',
+          message: 'Created file object'
         });
     })
     .catch(function (err) {
@@ -171,8 +197,13 @@ function createObject(req, res, next) {
 }
 
 function updateObject(req, res, next) {
-  db.none('update storage_objects set name=$1, parent=$2 where id=$3',
-    [req.body.name, req.body.parent, req.params.id])
+  db.none('update storage_objects set name=$1, parent=$2 where id=$3 and storage=$4',
+    [
+      req.body.name,
+      req.body.parent,
+      req.params.id,
+      req.params.storage
+    ])
     .then(function () {
       res.status(200)
         .json({
@@ -186,15 +217,13 @@ function updateObject(req, res, next) {
 }
 
 function removeObject(req, res, next) {
-  db.result('delete from storage_objects where id = $1', req.params.id)
+  db.result('delete from storage_objects where id=$1 and storage=$2', [req.params.id, req.params.storage])
     .then(function (result) {
-      /* jshint ignore:start */
       res.status(200)
         .json({
           status: 'success',
           message: `Removed ${result.rowCount} object`
         });
-      /* jshint ignore:end */
     })
     .catch(function (err) {
       return next(err);
@@ -205,7 +234,8 @@ module.exports = {
   getStorageInfo: getStorageInfo,
   getAllObjects: getAllObjects,
   getSingleObject: getSingleObject,
-  createObject: createObject,
+  createDirectoryObject: createDirectoryObject,
+  createFileObject: createFileObject,
   updateObject: updateObject,
   removeObject: removeObject
 };

@@ -3,6 +3,7 @@ import Vuikit from 'vuikit'
 import App from './App.vue'
 
 Vue.use(Vuikit)
+Vue.use(require('vue-moment'))
 
 new Vue({
   el: '#app',

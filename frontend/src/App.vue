@@ -6,19 +6,19 @@
       <vk-breadcrumb-item path="/">Home</vk-breadcrumb-item>
       <vk-breadcrumb-item path="/blog">Blog</vk-breadcrumb-item>
       <vk-breadcrumb-item path="/blog/category">Category</vk-breadcrumb-item>
-      <vk-breadcrumb-item path="/blog/category/post"
-        disabled>Post</vk-breadcrumb-item>
+      <vk-breadcrumb-item path="/blog/category/post">Post</vk-breadcrumb-item>
     </vk-breadcrumb>
     <vk-button @click.native="getObjects()">Get objects</vk-button>
     <vk-button @click.native="newFolder">New folder</vk-button>
     <vk-button @click.native="newFile">New file</vk-button>
     <vk-button @click.native="clearTable">Clear table</vk-button>
+    <vk-button @click.native="getPathInfo(currentDir)">Get path info</vk-button>
     <ul>
       <li v-for="item in items">
-        <a @click="getObject(item.id)">
-          <i v-if="item.is_dir" class="uk-icon-folder"></i>
-          <i v-else="item.is_dir" class="uk-icon-file"></i>
-						{{ item.name }}</a>
+        <i v-if="item.is_dir" class="uk-icon-folder"></i>
+        <i v-else="item.is_dir" class="uk-icon-file"></i>
+        <a v-if="item.is_dir" @click="getObject(item.id)"> {{ item.name }}</a>
+        <span v-else="item.is_dir"><p>{{ item.name }}</p></span>
       </li>
     </ul>
   </div>
@@ -58,7 +58,7 @@ export default {
       this.items = []
     },
     newFolder() {
-      const api = `http://localhost:3000/api/${this.currentStorage}/objects/`
+      const api = `http://localhost:3000/api/${this.currentStorage}/directory/`
       const newFolderName = window.prompt("New folder name:")
       const data = {
         name: newFolderName,
@@ -67,13 +67,13 @@ export default {
       }
       axios.post(api, data)
         .then(response => {
-          this.getObjects()
+          this.getObjects(this.currentDir)
         }).catch(error => {
           this.getObjects()
         })
     },
     newFile() {
-      const api = `http://localhost:3000/api/${this.currentStorage}/objects/`
+      const api = `http://localhost:3000/api/${this.currentStorage}/file/`
       const newFileName = window.prompt("New file name:")
       const data = {
         name: newFileName,
@@ -84,29 +84,37 @@ export default {
       }
       axios.post(api, data)
         .then(response => {
-          this.getObjects()
+          this.getObjects(this.currentDir)
         }).catch(error => {
           this.getObjects()
         })
     },
     getObjects(objectId) {
       var api = 'http://localhost:3000/api/' + this.currentStorage + '/objects/'
-      console.log(api)
       if (objectId !== undefined) {
         api = api + objectId
       }
       axios.get(api)
         .then(response => {
-          this.items = response.data.data;
+          this.items = response.data.data
         }).catch(error => {
           this.items = []
         })
     },
     getObject(objectId) {
+      const api = 'http://localhost:3000/api/' + this.currentStorage + '/objects/' + objectId
+      axios.get(api)
+        .then(response => {
+          this.items = response.data.data
+          this.currentDir = objectId
+        }).catch(error => {
+          this.items = []
+        })
+    },
+    getPathInfo(objectId) {
       const api = 'http://localhost:3000/api/' + this.currentStorage + '/object/' + objectId
       axios.get(api)
         .then(response => {
-          console.log(response.data.data)
         }).catch(error => {
           this.items = []
         })
