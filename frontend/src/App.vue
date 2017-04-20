@@ -1,6 +1,14 @@
 <template>
   <div id="app" class="uk-container uk-margin-large-top">
     <h1>{{ msg }}</h1>
+    <vk-button id="target"
+      @click.native="show = !show">
+      Username
+    </vk-button>
+    <vk-dropdown target="#target"
+      :show="show">
+      Logout
+    </vk-dropdown>
     <vk-breadcrumb location="/blog"
       :location="location"
       @change="location = arguments[0]">
@@ -13,16 +21,28 @@
     <vk-button @click.native="newFolder"><i class="uk-icon-plus"></i></vk-button>
     <vk-button @click.native="newFile"><i class="uk-icon-cloud-upload"></i></vk-button>
     <vk-button @click.native="getPathInfo"><i class="uk-icon-info"></i></vk-button>
-    <ul>
-      <li v-for="item in items">
-        <i v-if="item.is_dir" class="uk-icon-folder"></i>
-        <i v-else="item.is_dir" class="uk-icon-file"></i>
-        <a v-if="item.is_dir" @click="getObject(item.id)"> {{ item.name }}</a>
-        <span v-else="item.is_dir"><p>{{ item.name }}</p></span>
-        <a @click="removeObject(item.id)" class="uk-icon-trash"></a>
-        <a @click="getPathInfo(item.id)" class="uk-icon-info"></a>
-      </li>
-    </ul>
+    <vk-table
+      selectable
+      sortable
+      hover
+      condensed
+      trackBy="id"
+      :fields="[{
+      name: 'name',
+      sortBy: true
+      }, {
+      name: 'content_type',
+      headerClass: 'vk-table-width-minimum',
+      header: 'Type'
+      }, {
+      name: 'size',
+      headerClass: 'vk-table-width-minimum',
+      }, {
+      name: 'last_modified',
+      header: 'Last modified'
+      }]"
+      :rows="items">
+    </vk-table>
   </div>
 </template>
 
@@ -33,11 +53,12 @@ export default {
   name: 'app',
   data () {
     return {
-      msg: 'Dropbox',
+      msg: 'Dropbucks',
       items: [],
       currentStorage: 'b4d053da-e277-4b34-b86d-d3e0d0d34c69',
       currentDir: null,
       location: '/',
+      show: false
     }
   },
 
@@ -141,13 +162,17 @@ export default {
         }).catch(error => {
           this.items = []
         })
-    }
+    },
+
   }
 
 }
 </script>
 
 <style>
+body {
+  font-size: 18px;
+}
 ul {
   list-style-type: none;
 }
