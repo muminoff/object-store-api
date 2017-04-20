@@ -17,7 +17,7 @@ app.use(function(req, res, next) {
   next(err);
 });
 
-if (app.get('env') === 'development') {
+// if (app.get('env') === 'development') {
   app.use(function(err, req, res, next) {
     res.status( err.code || 500 )
     .json({
@@ -25,14 +25,14 @@ if (app.get('env') === 'development') {
       message: err
     });
   });
-}
+// }
 
-app.use(function(err, req, res, next) {
-  res.status(err.status || 500)
-  .json({
-    status: 'error',
-    message: err.message
-  });
-});
+// app.use(function(err, req, res, next) {
+//   res.status(err.status || 500)
+//   .json({
+//     status: 'error',
+//     message: err.message
+//   });
+// });
 
 module.exports = app;

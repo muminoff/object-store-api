@@ -8,8 +8,8 @@ var pgp = require('pg-promise')(options);
 var connectionString = 'postgres://localhost:5433/objects';
 var db = pgp(connectionString);
 
-function getAllRootObjects(req, res, next) {
-  const query = `
+function getAllObjects(req, res, next) {
+  const root_query = `
   select array_to_json(array_agg(json_build_object(
       'id', id,
       'name', name,
@@ -19,49 +19,49 @@ function getAllRootObjects(req, res, next) {
       'etag', etag,
       'last_modified', floor(extract(epoch from last_modified) * 1000),
       'parent', parent))) as data
-    from objects
+    from storage_objects
     where parent is null
   `;
-  db.query(query)
-    .then(function (data) {
-      res.status(200)
-        .json({
-          status: 'success',
-          data: data[0].data,
-          message: 'Retrieved all root objects'
-        });
-    })
-    .catch(function (err) {
-      return next(err);
-    });
-}
-
-function getAllChildrenObjects(req, res, next) {
-  const query = `
+  const parent_query = `
   select array_to_json(array_agg(json_build_object(
-    'id', id,
-    'name', name,
-    'is_dir', is_dir,
-    'size', size,
-    'content_type', content_type,
-    'etag', etag,
-    'last_modified', floor(extract(epoch from last_modified) * 1000),
-    'parent', parent))) as data
-  from objects
-  where parent = $1
+      'id', id,
+      'name', name,
+      'is_dir', is_dir,
+      'size', size,
+      'content_type', content_type,
+      'etag', etag,
+      'last_modified', floor(extract(epoch from last_modified) * 1000),
+      'parent', parent))) as data
+    from storage_objects
+    where parent = $1
   `;
-  db.query(query, req.params.id)
-    .then(function (data) {
-      res.status(200)
-        .json({
-          status: 'success',
-          data: data[0].data,
-          message: 'Retrieved all children objects'
-        });
-    })
-    .catch(function (err) {
-      return next(err);
-    });
+  if (req.params.id === undefined) {
+    db.query(root_query)
+      .then(function (data) {
+        res.status(200)
+          .json({
+            status: 'success',
+            data: data[0].data,
+            message: 'Retrieved all root objects'
+          });
+      })
+      .catch(function (err) {
+        return next(err);
+      });
+  } else {
+    db.query(parent_query, req.params.id)
+      .then(function (data) {
+        res.status(200)
+          .json({
+            status: 'success',
+            data: data[0].data,
+            message: 'Retrieved all root objects'
+          });
+      })
+      .catch(function (err) {
+        return next(err);
+      });
+  }
 }
 
 function getSingleObject(req, res, next) {
@@ -78,7 +78,7 @@ function getSingleObject(req, res, next) {
     tn.parent,
     1 as depth,
     ('/'::text || (tn.name)::text) as path
-    from objects tn
+    from storage_objects tn
     where (tn.parent is null)
     union all
     select c.id,
@@ -164,7 +164,7 @@ function updateObject(req, res, next) {
 }
 
 function removeObject(req, res, next) {
-  db.result('delete from objects where id = $1', req.params.id)
+  db.result('delete from storage_objects where id = $1', req.params.id)
     .then(function (result) {
       /* jshint ignore:start */
       res.status(200)
@@ -180,8 +180,7 @@ function removeObject(req, res, next) {
 }
 
 module.exports = {
-  getAllRootObjects: getAllRootObjects,
-  getAllChildrenObjects: getAllChildrenObjects,
+  getAllObjects: getAllObjects,
   getSingleObject: getSingleObject,
   createObject: createObject,
   updateObject: updateObject,
