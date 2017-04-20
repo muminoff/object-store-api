@@ -1,25 +1,26 @@
 <template>
-  <div id="app" class="uk-container uk-container-center uk-text-center uk-margin-large-top">
+  <div id="app" class="uk-container uk-margin-large-top">
     <h1>{{ msg }}</h1>
-    <vk-breadcrumb
+    <vk-breadcrumb location="/blog"
+      :location="location"
       @change="location = arguments[0]">
       <vk-breadcrumb-item path="/">Home</vk-breadcrumb-item>
       <vk-breadcrumb-item path="/blog">Blog</vk-breadcrumb-item>
       <vk-breadcrumb-item path="/blog/category">Category</vk-breadcrumb-item>
       <vk-breadcrumb-item path="/blog/category/post">Post</vk-breadcrumb-item>
     </vk-breadcrumb>
-    <vk-button @click.native="getObjects()">Get objects</vk-button>
-    <vk-button @click.native="newFolder">New folder</vk-button>
-    <vk-button @click.native="newFile">New file</vk-button>
-    <vk-button @click.native="clearTable">Clear table</vk-button>
-    <vk-button @click.native="getPathInfo">Get path info</vk-button>
+    <vk-button @click.native="getObjects()"><i class="uk-icon-refresh"></i></vk-button>
+    <vk-button @click.native="newFolder"><i class="uk-icon-plus"></i></vk-button>
+    <vk-button @click.native="newFile"><i class="uk-icon-cloud-upload"></i></vk-button>
+    <vk-button @click.native="getPathInfo"><i class="uk-icon-info"></i></vk-button>
     <ul>
       <li v-for="item in items">
         <i v-if="item.is_dir" class="uk-icon-folder"></i>
         <i v-else="item.is_dir" class="uk-icon-file"></i>
         <a v-if="item.is_dir" @click="getObject(item.id)"> {{ item.name }}</a>
         <span v-else="item.is_dir"><p>{{ item.name }}</p></span>
-        <vk-button @click.native="removeObject(item.id)">remove</vk-button>
+        <a @click="removeObject(item.id)" class="uk-icon-trash"></a>
+        <a @click="getPathInfo(item.id)" class="uk-icon-info"></a>
       </li>
     </ul>
   </div>
@@ -35,7 +36,8 @@ export default {
       msg: 'Dropbox',
       items: [],
       currentStorage: 'b4d053da-e277-4b34-b86d-d3e0d0d34c69',
-      currentDir: null
+      currentDir: null,
+      location: '/',
     }
   },
 
@@ -83,7 +85,7 @@ export default {
       const data = {
         name: newFileName,
         is_dir: false,
-        size: 25498125,
+        size: Math.floor(Math.random() * 1024 * 1024),
         parent: this.currentDir,
         storage: this.currentStorage
       }

@@ -175,10 +175,14 @@ function createFileObject(req, res, next) {
   insert into storage_objects (name, is_dir, size, content_type, etag, parent, storage)
   values ($1, false, $2, $3, $4, $5, $6);
   `;
+  let content_type = null;
+  if (mime.lookup(req.body.name)) {
+    content_type = mime.lookup(req.body.name);
+  }
   db.none(query, [
     req.body.name,
     req.body.size,
-    req.body.content_type,
+    content_type,
     req.body.etag,
     req.body.parent || null,
     req.params.storage
