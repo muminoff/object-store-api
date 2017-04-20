@@ -8,6 +8,25 @@ var pgp = require('pg-promise')(options);
 var connectionString = 'postgres://localhost:5433/objects';
 var db = pgp(connectionString);
 
+function getStorageInfo(req, res, next) {
+  const query = `
+  select main, trash from user_storages
+  where user_id=1
+  `;
+  db.query(query)
+    .then(function (data) {
+      res.status(200)
+        .json({
+          status: 'success',
+          data: data,
+          message: 'Retrieved storage info'
+        });
+    })
+    .catch(function (err) {
+      return next(err);
+    });
+}
+
 function getAllObjects(req, res, next) {
   const root_query = `
   select array_to_json(array_agg(json_build_object(
@@ -20,7 +39,7 @@ function getAllObjects(req, res, next) {
       'last_modified', floor(extract(epoch from last_modified) * 1000),
       'parent', parent))) as data
     from storage_objects
-    where parent is null
+    where storage = $1 and parent is null
   `;
   const parent_query = `
   select array_to_json(array_agg(json_build_object(
@@ -33,10 +52,10 @@ function getAllObjects(req, res, next) {
       'last_modified', floor(extract(epoch from last_modified) * 1000),
       'parent', parent))) as data
     from storage_objects
-    where parent = $1
+    where storage = $1 and parent = $2
   `;
   if (req.params.id === undefined) {
-    db.query(root_query)
+    db.query(root_query, req.params.storage)
       .then(function (data) {
         res.status(200)
           .json({
@@ -49,7 +68,7 @@ function getAllObjects(req, res, next) {
         return next(err);
       });
   } else {
-    db.query(parent_query, req.params.id)
+    db.query(parent_query, [req.params.storage, req.params.id])
       .then(function (data) {
         res.status(200)
           .json({
@@ -65,7 +84,7 @@ function getAllObjects(req, res, next) {
 }
 
 function getSingleObject(req, res, next) {
-  var objectID = req.params.id;
+  var objectId = req.params.id;
   const query = `
   with recursive nodes_cte(id, name, is_dir, size, content_type, etag, last_modified, parent, depth, path) as (
     select tn.id,
@@ -92,7 +111,7 @@ function getSingleObject(req, res, next) {
     (p.depth + 1) as depth,
     ((p.path || '/'::text) || (c.name)::text)
     from nodes_cte p,
-    objects c
+    storage_objects c
     where (c.parent = p.id)
   )
   select json_build_object(
@@ -110,7 +129,7 @@ function getSingleObject(req, res, next) {
   order by n.depth
  limit 1;
   `;
-  db.one(query, objectID)
+  db.one(query, objectId)
     .then(function (data) {
       res.status(200)
         .json({
@@ -120,21 +139,24 @@ function getSingleObject(req, res, next) {
         });
     })
     .catch(function (err) {
+      console.log(err);
       return next(err);
     });
 }
 
 function createObject(req, res, next) {
-  query = `
-  insert into objects (name, is_dir, size, parent)
-  values ($1, $2, $3, $4);
-  `;
   console.log(req.body);
+  query = `
+  insert into storage_objects (name, is_dir, size, parent, storage)
+  values ($1, $2, $3, $4, $5);
+  `;
   db.none(query, [
     req.body.name,
-    req.body.is_dir || false,
-    req.body.size || null,
-    req.body.parent || null])
+    req.body.is_dir,
+    req.body.size || 0,
+    req.body.parent || null,
+    req.params.storage
+  ])
     .then(function () {
       res.status(200)
         .json({
@@ -149,7 +171,7 @@ function createObject(req, res, next) {
 }
 
 function updateObject(req, res, next) {
-  db.none('update objects set name=$1, parent=$2 where id=$3',
+  db.none('update storage_objects set name=$1, parent=$2 where id=$3',
     [req.body.name, req.body.parent, req.params.id])
     .then(function () {
       res.status(200)
@@ -180,6 +202,7 @@ function removeObject(req, res, next) {
 }
 
 module.exports = {
+  getStorageInfo: getStorageInfo,
   getAllObjects: getAllObjects,
   getSingleObject: getSingleObject,
   createObject: createObject,
