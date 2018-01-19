@@ -6,21 +6,24 @@ var options = {
 };
 
 var pgp = require('pg-promise')(options);
-var connectionString = 'postgres://localhost:5433/objects';
+var connectionString = 'postgres://localhost:5432/objects';
 var db = pgp(connectionString);
 
 function getStorageInfo(req, res, next) {
   const query = `
-  select main, trash from user_storages
+  select json_build_object(
+    'main', main,
+    'trash', trash)
+  as data
+  from user_storages
   where user_id=1
   `;
-  db.query(query)
+  db.one(query)
     .then(function (data) {
       res.status(200)
         .json({
-          status: 'success',
-          data: data,
-          message: 'Retrieved storage info'
+          status: 'ok',
+          data: data.data
         });
     })
     .catch(function (err) {
@@ -37,7 +40,7 @@ function getAllObjects(req, res, next) {
       'size', size,
       'content_type', content_type,
       'etag', etag,
-      'last_modified', floor(extract(epoch from last_modified) * 1000),
+      'last_modified', floor(extract(epoch from last_modified)),
       'parent', parent))) as data
     from storage_objects
     where storage = $1 and parent is null
@@ -50,7 +53,7 @@ function getAllObjects(req, res, next) {
       'size', size,
       'content_type', content_type,
       'etag', etag,
-      'last_modified', floor(extract(epoch from last_modified) * 1000),
+      'last_modified', floor(extract(epoch from last_modified)),
       'parent', parent))) as data
     from storage_objects
     where storage = $1 and parent = $2
@@ -60,9 +63,8 @@ function getAllObjects(req, res, next) {
       .then(function (data) {
         res.status(200)
           .json({
-            status: 'success',
-            data: data[0].data,
-            message: 'Retrieved all root objects'
+            status: 'ok',
+            data: data[0].data
           });
       })
       .catch(function (err) {
@@ -73,9 +75,8 @@ function getAllObjects(req, res, next) {
       .then(function (data) {
         res.status(200)
           .json({
-            status: 'success',
-            data: data[0].data,
-            message: 'Retrieved all root objects'
+            status: 'ok',
+            data: data[0].data || []
           });
       })
       .catch(function (err) {
@@ -85,7 +86,10 @@ function getAllObjects(req, res, next) {
 }
 
 function getSingleObject(req, res, next) {
-  var objectId = req.params.id;
+  var objectId = req.params.id || false;
+  if(!objectId) {
+      res.status(504).json({status:'not implemented yet'});
+  }
   const query = `
   with recursive nodes_cte(id, name, is_dir, size, content_type, etag, last_modified, parent, depth, path) as (
     select tn.id,
@@ -122,7 +126,7 @@ function getSingleObject(req, res, next) {
     'size', n.size,
     'content_type', n.content_type,
     'etag', n.etag,
-    'last_modified', floor(extract(epoch from n.last_modified) * 1000),
+    'last_modified', floor(extract(epoch from n.last_modified)),
     'parent', n.parent,
     'path', n.path) as data
    from nodes_cte n
@@ -134,7 +138,7 @@ function getSingleObject(req, res, next) {
     .then(function (data) {
       res.status(200)
         .json({
-          status: 'success',
+          status: 'ok',
           data: data.data,
           message: 'Retrieved one object'
         });
@@ -159,7 +163,7 @@ function createDirectoryObject(req, res, next) {
     .then(function () {
       res.status(200)
         .json({
-          status: 'success',
+          status: 'ok',
           message: 'Created directory object'
         });
     })
@@ -190,7 +194,7 @@ function createFileObject(req, res, next) {
     .then(function () {
       res.status(200)
         .json({
-          status: 'success',
+          status: 'ok',
           message: 'Created file object'
         });
     })
@@ -211,7 +215,7 @@ function updateObject(req, res, next) {
     .then(function () {
       res.status(200)
         .json({
-          status: 'success',
+          status: 'ok',
           message: 'Updated object'
         });
     })
@@ -225,7 +229,7 @@ function removeObject(req, res, next) {
     .then(function (result) {
       res.status(200)
         .json({
-          status: 'success',
+          status: 'ok',
           message: `Removed ${result.rowCount} object`
         });
     })
