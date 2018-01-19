@@ -1,0 +1,48 @@
+.app {
+  padding-top: 40px;
+}
+body {
+  font-family: 'Roboto Slab', serif;
+}
+a:link {
+  text-decoration: none;
+  /* background-color: #000; */
+  color: #000;
+}
+
+a:visited {
+  /* background-color: #000; */
+  color: #000;
+  text-decoration: none;
+}
+
+h4 {
+  color: #000;
+}
+
+small {
+  color: #dedede;
+}
+
+.button-file {
+  font-family: 'Courier', monospace;
+  font-style: normal;
+  text-transform: none;
+}
+
+table > tr > td > button {
+  vertical-align:middle;
+}
+
+
+
+.list-horizontal li {
+	display:inline-block;
+}
+.list-horizontal li:before {
+	content: '\00a0\2022\00a0\00a0';
+	color:#000;
+}
+.list-horizontal li:first-child:before {
+	content: '';
+}
